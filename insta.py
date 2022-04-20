@@ -165,7 +165,7 @@ while opt:
 	print(f"3. Unfollow all users followed by the bot")
 	print(f"4. Mention N users in a publication (For raffers)")
 	print(f"5. Common friends between 2 users")
-	print(f"6. Backup of your followers")
+	print(f"6. Backup of users following")
 	print(f"7. Execute your backup (Follows all of your backup users)")
 	print(f"8. Exit")
 	options = input("Select option [1-8]:")
