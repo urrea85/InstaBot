@@ -20,6 +20,8 @@ sleep(2)
 error = fg('red')
 alert = fg('yellow')
 
+profile = ""
+
 def login(username, password):
 	username_input = browser.find_element(By.CSS_SELECTOR,"input[name='username']")
 	password_input = browser.find_element(By.CSS_SELECTOR,"input[name='password']")
@@ -96,7 +98,8 @@ def follow_followers():
 
 def unfollow(username):
 	try:
-		browser.get(f"https://www.instagram.com/{username}/")
+		browser.get(f"https://www.instagram.com/{username}/following/")
+
 		sleep(1)
 		try:
 			nuevo = browser.find_element(By.XPATH, "//*[@id='react-root']/section/main/div/header/section/div[2]/div/div[2]/div/span/span[1]/button")
@@ -127,6 +130,27 @@ def unfollow_all():
 	except:
 		print(error + "Error: Try it again" + Style.RESET_ALL)
 
+def backup_of_followers():
+	try:
+		browser.get(f"https://www.instagram.com/{profile}/")
+		sleep(1)
+		browser.find_element(By.XPATH,"//div[text()=' seguidos']").click()
+		sleep(1)
+		scroll_followers(2)
+		print("Reading users..")
+		list_followers = browser.find_element(By.XPATH,"//div[@class='PZuss']")
+		for child in list_followers.find_elements(By.CSS_SELECTOR,'li'):
+			follow = child.find_element(By.CSS_SELECTOR,"button")
+			if follow.text == "Siguiendo":
+				name = child.find_element(By.CSS_SELECTOR, "span")
+				print(name.text)
+				file = open("backup.txt","a")
+				file.write(name.text+'\n')
+				file.close()
+		print(f"Backup: OK")
+	except:
+		print(error + "Error: Try it again" + Style.RESET_ALL)
+
 accept_cookies()
 
 opt = True
@@ -139,25 +163,36 @@ while opt:
 	print(f"1. Log In")
 	print(f"2. Follow all followers of a user")
 	print(f"3. Unfollow all users followed by the bot")
-	print(f"4. Mentions in a publication")
+	print(f"4. Mention N users in a publication (For raffers)")
 	print(f"5. Common friends between 2 users")
-	print(f"6. Exit")
-	options = input("Select option [1-6]:")
+	print(f"6. Backup of your followers")
+	print(f"7. Execute your backup (Follows all of your backup users)")
+	print(f"8. Exit")
+	options = input("Select option [1-8]:")
 
 	if options == '1':
 		user = input("Username: ")
 		passwd = getpass("Password: ")
+		profile = user
 		login(user,passwd)
 	elif options == '2':
 		fol = input("Select the user: ")
 		if open_followers(fol):
 			sleep(3)
-			if scroll_followers(2):
+			if scroll_followers(2): #PROBABLY I CAN SCROLL USERS CONTROLLED BY THEIR Nº OF FOLLOWERS WITH A FUNCTION
 				print(f"Following all users...")
 				follow_followers()
 	elif options == '3':
 		unfollow_all()
+	elif options == '4':
+		pass
+	elif options == '5':
+		pass
 	elif options == '6':
+		backup_of_followers()
+	elif options == '7':
+		pass
+	elif options == '8':
 		print(f"Bye...")
 		browser.quit()
 		opt = False
