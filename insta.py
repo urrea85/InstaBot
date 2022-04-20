@@ -8,6 +8,10 @@ from colorama import Fore
 import pyfiglet
 from colored import fg
 from colorama import Style
+from os import remove
+import pdb
+import random
+
 
 browser = webdriver.Chrome()
 browser.get("https://www.instagram.com/")
@@ -49,12 +53,19 @@ def open_followers(account):
 
 def scroll_followers(minutes):
 	try:
+		before = ""
 		pop_up = browser.find_element(By.XPATH,"//div[@class='isgrP']")
 		timeout = time() + 60 * minutes
 		while True:
 			if time() > timeout:
 				break
 			browser.execute_script('arguments[0].scrollTop = arguments[0].scrollTop + arguments[0].offsetHeight;',pop_up)
+			#Divs=pop_up.find_element(By.CSS_SELECTOR,'li:last-child')
+			"""if(Divs.text == before):
+				print(f"El causante {before}")
+				break
+			else:
+				before = Divs.text"""
 			sleep(1)
 
 		return True
@@ -65,12 +76,54 @@ def scroll_followers(minutes):
 def follow_followers():
 	try:
 		list_followers = browser.find_element(By.XPATH,"//div[@class='PZuss']")
-		for child in list_followers.find_element(By.CSS_SELECTOR,'li'):
-			follow = child.find.find_element(By.CSS_SELECTOR,"button")
+		for child in list_followers.find_elements(By.CSS_SELECTOR,'li'):
+			follow = child.find_element(By.CSS_SELECTOR,"button")
 			if follow.text == "Seguir":
 				follow.click()
+				sleep(random.randint(1,2))
+				name = child.find_element(By.CSS_SELECTOR, "span")
+				if child.find_element(By.CSS_SELECTOR,"button").text == "Seguir":
+					print("Instagram does not allow to follow more accounts, try it again in a few minutes")
+				else:
+					print(name.text)
+					file = open("followed.txt","a")
+					file.write(name.text+'\n')
+					file.close()
 			else:
 				pass #already followed
+	except:
+		print(error + "Error: Try it again" + Style.RESET_ALL)
+
+def unfollow(username):
+	try:
+		browser.get(f"https://www.instagram.com/{username}/")
+		sleep(1)
+		try:
+			nuevo = browser.find_element(By.XPATH, "//*[@id='react-root']/section/main/div/header/section/div[2]/div/div[2]/div/span/span[1]/button")
+		except:
+			nuevo = browser.find_element(By.XPATH, "//*[@id='react-root']/section/main/div/header/section/div[1]/div[1]/div/div[2]/div/span/span[1]/button")
+		nuevo.click()
+		sleep(1)
+		new = browser.find_element(By.XPATH, "//button[text()='Dejar de seguir']")
+		new.click()
+	except:
+		file = open("followed.txt","a")
+		file.write(username+'\n')
+		file.close()
+		print(error + "Error: Try it again" + Style.RESET_ALL)
+
+
+def unfollow_all():
+	try:
+		file = open("followed.txt","r") #r para leer, si no existe el fichero da error
+		contenido = file.readlines()
+		file.close()
+		remove("followed.txt")
+		for line in contenido:
+			user = line.strip("\n")
+			print(f"Unfollowing {user}")
+			unfollow(user)
+		print("All users unfollowed succesfully")
 	except:
 		print(error + "Error: Try it again" + Style.RESET_ALL)
 
@@ -85,10 +138,11 @@ while opt:
 	print (" ")
 	print(f"1. Log In")
 	print(f"2. Follow all followers of a user")
-	print(f"3. Mentions in a publication")
-	print(f"4. Common friends between 2 users")
-	print(f"5. Exit")
-	options = input("Select option [1-5]:")
+	print(f"3. Unfollow all users followed by the bot")
+	print(f"4. Mentions in a publication")
+	print(f"5. Common friends between 2 users")
+	print(f"6. Exit")
+	options = input("Select option [1-6]:")
 
 	if options == '1':
 		user = input("Username: ")
@@ -100,8 +154,10 @@ while opt:
 			sleep(3)
 			if scroll_followers(2):
 				print(f"Following all users...")
-				#follow_followers()
-	elif options == '5':
+				follow_followers()
+	elif options == '3':
+		unfollow_all()
+	elif options == '6':
 		print(f"Bye...")
 		browser.quit()
 		opt = False
