@@ -3,6 +3,7 @@
 
 By urrea
 
+Functionalities:
 1. Log In
 2. Follow all followers of a user
 3. Unfollow all users followed by the bot
@@ -12,4 +13,4 @@ By urrea
 7. Execute your backup (Follows all of your backup users)
 8. Unfollow all (0 following)
 9. Exit
-Select option [1-9]:
+
