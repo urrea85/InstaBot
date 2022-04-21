@@ -9,6 +9,7 @@ import pyfiglet
 from colored import fg
 from colorama import Style
 from os import remove
+from os.path import exists
 import pdb
 import random
 
@@ -53,11 +54,14 @@ def open_followers(account):
 		print(error + "Error: Invalid username" + Style.RESET_ALL)
 		return False
 
-def scroll_followers(minutes):
+def scroll_followers():
 	try:
 		before = ""
+		seguidores = int(browser.find_element(By.XPATH,"//div[text()=' seguidores']/span").text.replace(".",""))
+		segundos = seguidores / 4 #ratio of scroll
+		print(f"The scroll has a duration of {segundos/60} minutes")
 		pop_up = browser.find_element(By.XPATH,"//div[@class='isgrP']")
-		timeout = time() + 60 * minutes
+		timeout = time() + segundos
 		while True:
 			if time() > timeout:
 				break
@@ -96,7 +100,7 @@ def follow_followers():
 	except:
 		print(error + "Error: Try it again" + Style.RESET_ALL)
 
-def unfollow(username):
+def unfollow(username,filename):
 	try:
 		browser.get(f"https://www.instagram.com/{username}/following/")
 
@@ -109,23 +113,25 @@ def unfollow(username):
 		sleep(1)
 		new = browser.find_element(By.XPATH, "//button[text()='Dejar de seguir']")
 		new.click()
+		sleep(1)
 	except:
-		file = open("followed.txt","a")
+		file = open(filename,"a")
 		file.write(username+'\n')
 		file.close()
 		print(error + "Error: Try it again" + Style.RESET_ALL)
 
 
-def unfollow_all():
+
+def unfollow_all(filename):
 	try:
-		file = open("followed.txt","r") #r para leer, si no existe el fichero da error
+		file = open(filename,"r") #r para leer, si no existe el fichero da error
 		contenido = file.readlines()
 		file.close()
-		remove("followed.txt")
+		remove(filename)
 		for line in contenido:
 			user = line.strip("\n")
 			print(f"Unfollowing {user}")
-			unfollow(user)
+			unfollow(user, filename)
 		print("All users unfollowed succesfully")
 	except:
 		print(error + "Error: Try it again" + Style.RESET_ALL)
@@ -136,7 +142,8 @@ def backup_of_followers():
 		sleep(1)
 		browser.find_element(By.XPATH,"//div[text()=' seguidos']").click()
 		sleep(1)
-		scroll_followers(2)
+		print(f"Loading...")
+		scroll_followers()
 		print("Reading users..")
 		list_followers = browser.find_element(By.XPATH,"//div[@class='PZuss']")
 		for child in list_followers.find_elements(By.CSS_SELECTOR,'li'):
@@ -151,6 +158,70 @@ def backup_of_followers():
 	except:
 		print(error + "Error: Try it again" + Style.RESET_ALL)
 
+
+def follow_all(filename):
+	try:
+		file = open(filename,"r")
+		lines = file.readlines()
+		file.close()
+
+		for line in lines:
+			user = line.strip("\n")
+			print(f"Following {user}")
+			follow(user)
+	except:
+		print(error + "Error: Try it again" + Style.RESET_ALL)
+
+
+
+def follow(username):
+	try:
+		browser.get(f"https://www.instagram.com/{username}/")
+		fol = browser.find_element(By.XPATH, "//button[text()='Seguir']")
+		fol.click()
+		sleep(1)
+	except:
+		print(error + "Error: Try it again" + Style.RESET_ALL)
+
+
+def followers_of_user(username):
+	try:
+		browser.get(f"https://www.instagram.com/{username}/")
+		sleep(1)
+		browser.find_element(By.XPATH,"//div[text()=' seguidos']").click()
+		sleep(1)
+		scroll_followers()
+		print("Reading users..")
+		list_followers = browser.find_element(By.XPATH,"//div[@class='PZuss']")
+		for child in list_followers.find_elements(By.CSS_SELECTOR,'li'):
+			name = child.find_element(By.CSS_SELECTOR, "span")
+			fileName = username + ".txt"
+			file = open(fileName,"a")
+			file.write(name.text+'\n')
+			file.close()
+		print(f"Followers of {username} done.")
+	except:
+		print(error + "Error: Try it again" + Style.RESET_ALL)
+
+
+def matches(user1, user2):
+	try:
+		print("User matches: ")
+		file1 = open(user1 + ".txt", 'r')
+		follows1 = file1.readlines()
+		cont = 0
+
+		for fol1 in follows1:
+			file2 = open(user2 + ".txt",'r')
+			follows2 = file2.readlines()
+			for fol2 in follows2:
+				if fol1.split("\n") == fol2.split("\n"):
+					cont = cont + 1
+					print(fol1)
+		print(f"{cont} matches between {user1} and {user2}")
+	except:
+		print(error + "Error: Try it again" + Style.RESET_ALL)
+
 accept_cookies()
 
 opt = True
@@ -158,6 +229,7 @@ opt = True
 ascii_banner = pyfiglet.figlet_format("InstaBot")
 print(ascii_banner)
 print("By urrea")
+
 while opt:
 	print (" ")
 	print(f"1. Log In")
@@ -165,10 +237,11 @@ while opt:
 	print(f"3. Unfollow all users followed by the bot")
 	print(f"4. Mention N users in a publication (For raffers)")
 	print(f"5. Common friends between 2 users")
-	print(f"6. Backup of users following")
+	print(f"6. Backup of following users")
 	print(f"7. Execute your backup (Follows all of your backup users)")
-	print(f"8. Exit")
-	options = input("Select option [1-8]:")
+	print(f"8. Unfollow all (0 following)")
+	print(f"9. Exit")
+	options = input("Select option [1-9]:")
 
 	if options == '1':
 		user = input("Username: ")
@@ -179,20 +252,32 @@ while opt:
 		fol = input("Select the user: ")
 		if open_followers(fol):
 			sleep(3)
-			if scroll_followers(2): #PROBABLY I CAN SCROLL USERS CONTROLLED BY THEIR Nº OF FOLLOWERS WITH A FUNCTION
+			if scroll_followers(): #PROBABLY I CAN SCROLL USERS CONTROLLED BY THEIR Nº OF FOLLOWERS WITH A FUNCTION
 				print(f"Following all users...")
 				follow_followers()
 	elif options == '3':
-		unfollow_all()
+		unfollow_all("followers.txt")
 	elif options == '4':
 		pass
 	elif options == '5':
-		pass
+		user1 = input("Select the first user: ")
+		user2 = input("Select the second user: ")
+		followers_of_user(user1)
+		followers_of_user(user2)
+		matches(user1,user2)
 	elif options == '6':
 		backup_of_followers()
 	elif options == '7':
-		pass
+		if exists("backup.txt"):
+			follow_all("backup.txt")
+		else:
+			print(f"You have to do a backup first")
 	elif options == '8':
+		if exists("backup.txt"):
+			unfollow_all("backup.txt")
+		else:
+			print(f"You have to do a backup first")
+	elif options == '9':
 		print(f"Bye...")
 		browser.quit()
 		opt = False
